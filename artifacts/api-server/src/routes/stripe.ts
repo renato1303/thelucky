@@ -162,7 +162,7 @@ router.post(
           error:
             `No active Stripe price found for plan "${planOrId}". ` +
             "Set the STRIPE_PRICE_ID env var with your live price ID.",
-        }) as any;
+        });
       }
 
       // Build success / cancel URLs — always use an absolute HTTPS base.
@@ -231,10 +231,10 @@ router.post(
       }
 
       logger.info({ userId: req.user.id, sessionId: session.id, priceId }, "Checkout session created");
-      res.json({ url: session.url, session_id: session.id });
+      return res.json({ url: session.url, session_id: session.id });
     } catch (err: any) {
       logger.error({ err }, "POST /checkout failed");
-      res.status(500).json({ error: err.message ?? "Failed to create checkout session" });
+      return res.status(500).json({ error: err.message ?? "Failed to create checkout session" });
     }
   })
 );
@@ -276,9 +276,9 @@ router.get(
 
         if (stripeSubscription) {
           // Guard: current_period_end can be 0 or null for no_payment_required sessions
-          const rawEnd      = stripeSubscription.current_period_end;
+          const rawEnd      = (stripeSubscription as any).current_period_end;
           const periodEndMs = (rawEnd && rawEnd > 0) ? rawEnd * 1000 : null;
-          const interval    = stripeSubscription.items.data[0]?.price?.recurring?.interval;
+          const interval    = (stripeSubscription as any).items?.data?.[0]?.price?.recurring?.interval;
 
           await storage.upsertUserSubscription(req.user.id, {
             stripe_customer_id:     customerId,
@@ -376,9 +376,9 @@ router.get(
           return res.json({ synced: false, reason: "no_active_subscription" }) as any;
         }
         // Provision from trialing subscription
-        const _trialEnd   = trialSub.current_period_end;
+        const _trialEnd   = (trialSub as any).current_period_end;
         const periodEndMs = (_trialEnd && _trialEnd > 0) ? _trialEnd * 1000 : null;
-        const interval    = trialSub.items.data[0]?.price?.recurring?.interval;
+        const interval    = (trialSub as any).items?.data?.[0]?.price?.recurring?.interval;
         await storage.upsertUserSubscription(req.user.id, {
           stripe_customer_id:     sub.stripe_customer_id,
           stripe_subscription_id: trialSub.id,

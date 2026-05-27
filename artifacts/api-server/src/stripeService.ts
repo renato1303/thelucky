@@ -23,7 +23,7 @@ export class StripeService {
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
+      mode: "subscription" as const,
       allow_promotion_codes: true,
       payment_method_collection: "if_required",
       success_url: successUrl,
