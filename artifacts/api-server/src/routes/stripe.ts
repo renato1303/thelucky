@@ -50,9 +50,9 @@ async function getUserFromRequest(req: Request): Promise<{ id: string; email?: s
 function requireAuth(
   handler: (req: Request & { user: { id: string; email?: string } }, res: Response) => Promise<void>
 ) {
-  return async (req: Request, res: Response) => {
+  return async (req: Request, res: Response): Promise<void> => {
     const user = await getUserFromRequest(req);
-    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
     await handler(Object.assign(req, { user }), res);
   };
 }
@@ -395,9 +395,9 @@ router.get(
       }
 
       // Provision from active subscription
-      const _activeEnd  = activeSub.current_period_end;
+      const _activeEnd  = (activeSub as any).current_period_end;
       const periodEndMs = (_activeEnd && _activeEnd > 0) ? _activeEnd * 1000 : null;
-      const interval    = activeSub.items.data[0]?.price?.recurring?.interval;
+      const interval    = (activeSub as any).items?.data?.[0]?.price?.recurring?.interval;
 
       await storage.upsertUserSubscription(req.user.id, {
         stripe_customer_id:     sub.stripe_customer_id,

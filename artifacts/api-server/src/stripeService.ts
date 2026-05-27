@@ -45,9 +45,9 @@ export class StripeService {
       customer_email: email,
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
+      mode: "subscription" as const,
       allow_promotion_codes: true,
-      payment_method_collection: "if_required",
+      payment_method_collection: "if_required" as const,
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
