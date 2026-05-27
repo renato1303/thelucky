@@ -1,6 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import type { IncomingMessage, ServerResponse } from "http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 import { WebhookHandlers } from "./webhookHandlers.js";
@@ -13,14 +14,14 @@ app.use(
   pinoHttp({
     logger,
     serializers: {
-      req(req) {
+      req(req: IncomingMessage) {
         return {
-          id: req.id,
+          id: (req as any).id,
           method: req.method,
           url: req.url?.split("?")[0],
         };
       },
-      res(res) {
+      res(res: ServerResponse) {
         return {
           statusCode: res.statusCode,
         };
@@ -36,7 +37,7 @@ app.use(cors());
 app.post(
   "/api/stripe/webhook",
   express.raw({ type: "application/json" }),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"] as string;
 
     if (!sig) {
@@ -82,6 +83,7 @@ app.post(
     } catch (err: any) {
       logger.error({ err }, "handleSubscriptionWebhook failed");
     }
+    return;
   }
 );
 
@@ -114,7 +116,7 @@ async function handleSubscriptionWebhook(event: any) {
       // Fetch full subscription from Stripe to get period_end
       const stripe = await getUncachableStripeClient();
       const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const rawEnd      = stripeSubscription.current_period_end;
+      const rawEnd      = (stripeSubscription as any).current_period_end;
       const periodEndMs = (rawEnd && rawEnd > 0) ? rawEnd * 1000 : null;
       const interval    = stripeSubscription.items.data[0]?.price?.recurring?.interval;
 
@@ -187,7 +189,7 @@ async function handleSubscriptionWebhook(event: any) {
 
       const stripe = await getUncachableStripeClient();
       const stripeSubscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-      const rawInvEnd   = stripeSubscription.current_period_end;
+      const rawInvEnd   = (stripeSubscription as any).current_period_end;
       const periodEndMs = (rawInvEnd && rawInvEnd > 0) ? rawInvEnd * 1000 : null;
       const interval    = stripeSubscription.items.data[0]?.price?.recurring?.interval;
 
