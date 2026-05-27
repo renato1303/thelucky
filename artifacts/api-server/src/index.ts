@@ -1,4 +1,4 @@
-import app from "./app.js";
+import { app } from "./app.js";
 import { logger } from "./lib/logger.js";
 import { initStripe } from "./stripeInit.js";
 
@@ -16,16 +16,19 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, async (err?: Error) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+if (process.env.VERCEL !== "1" && process.env.NODE_ENV !== "test") {
+  app.listen(port, async (err?: Error) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-  logger.info({ port }, "Server listening");
+    logger.info({ port }, "Server listening");
 
-  // Initialize Stripe after server is up (non-blocking)
-  initStripe().catch((err) => {
-    logger.error({ err }, "initStripe failed");
+    initStripe().catch((err) => {
+      logger.error({ err }, "initStripe failed");
+    });
   });
-});
+}
+
+export { app };
