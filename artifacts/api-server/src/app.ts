@@ -11,7 +11,7 @@ import { storage } from "./storage.js";
 const app: Express = express();
 
 app.use(
-  pinoHttp({
+  (pinoHttp as unknown as (opts?: any) => any)({
     logger,
     serializers: {
       req(req: IncomingMessage) {
