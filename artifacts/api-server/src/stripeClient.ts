@@ -10,7 +10,6 @@
  */
 
 import Stripe from "stripe";
-import type { Stripe as StripeType } from "stripe";
 import { StripeSync } from "stripe-replit-sync";
 import { logger } from "./lib/logger.js";
 
@@ -68,7 +67,7 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
   url.searchParams.set("connector_names", connectorName);
   url.searchParams.set("environment", targetEnv);
 
-  const response: globalThis.Response = await fetch(url.toString(), {
+  const response = await fetch(url.toString(), {
     headers: {
       Accept:           "application/json",
       "X-Replit-Token": xReplitToken,
