@@ -48,7 +48,7 @@ async function getUserFromRequest(req: Request): Promise<{ id: string; email?: s
 }
 
 function requireAuth(
-  handler: (req: Request & { user: { id: string; email?: string } }, res: Response) => Promise<void>
+  handler: (req: Request & { user: { id: string; email?: string } }, res: Response) => Promise<any>
 ) {
   return async (req: Request, res: Response): Promise<void> => {
     const user = await getUserFromRequest(req);
@@ -158,11 +158,12 @@ router.post(
       const priceId = await resolvePriceId(planOrId);
 
       if (!priceId) {
-        return res.status(400).json({
+        res.status(400).json({
           error:
             `No active Stripe price found for plan "${planOrId}". ` +
             "Set the STRIPE_PRICE_ID env var with your live price ID.",
         });
+        return;
       }
 
       // Build success / cancel URLs — always use an absolute HTTPS base.
@@ -231,10 +232,12 @@ router.post(
       }
 
       logger.info({ userId: req.user.id, sessionId: session.id, priceId }, "Checkout session created");
-      return res.json({ url: session.url, session_id: session.id });
+      res.json({ url: session.url, session_id: session.id });
+      return;
     } catch (err: any) {
       logger.error({ err }, "POST /checkout failed");
-      return res.status(500).json({ error: err.message ?? "Failed to create checkout session" });
+      res.status(500).json({ error: err.message ?? "Failed to create checkout session" });
+      return;
     }
   })
 );
@@ -353,7 +356,8 @@ router.get(
       const sbSub   = await storage.getSupabaseSubscription(req.user.id);
       const sub     = sbSub?.stripe_customer_id ? sbSub : await storage.getUserSubscription(req.user.id);
       if (!sub?.stripe_customer_id) {
-        return res.json({ synced: false, reason: "no_customer" }) as any;
+        res.json({ synced: false, reason: "no_customer" });
+        return;
       }
 
       const stripe = await getUncachableStripeClient();
@@ -373,7 +377,8 @@ router.get(
         });
         const trialSub = trialSubs.data[0];
         if (!trialSub) {
-          return res.json({ synced: false, reason: "no_active_subscription" }) as any;
+          res.json({ synced: false, reason: "no_active_subscription" });
+          return;
         }
         // Provision from trialing subscription
         const _trialEnd   = (trialSub as any).current_period_end;
@@ -391,7 +396,8 @@ router.get(
           status:         trialSub.status,
         });
         logger.info({ userId: req.user.id, subId: trialSub.id }, "Premium synced (trialing)");
-        return res.json({ synced: true, status: trialSub.status }) as any;
+        res.json({ synced: true, status: trialSub.status });
+        return;
       }
 
       // Provision from active subscription
@@ -414,6 +420,7 @@ router.get(
 
       logger.info({ userId: req.user.id, subId: activeSub.id }, "Premium synced (active)");
       res.json({ synced: true, status: activeSub.status });
+      return;
     } catch (err: any) {
       logger.error({ err }, "GET /sync-subscription failed");
       res.status(500).json({ error: err.message ?? "Failed to sync subscription" });
@@ -431,7 +438,8 @@ router.post(
       const sbSub = await storage.getSupabaseSubscription(req.user.id);
       const sub   = sbSub?.stripe_customer_id ? sbSub : await storage.getUserSubscription(req.user.id);
       if (!sub?.stripe_customer_id) {
-        return res.status(400).json({ error: "No Stripe customer found for this user" }) as any;
+        res.status(400).json({ error: "No Stripe customer found for this user" });
+        return;
       }
 
       const appOrigin =

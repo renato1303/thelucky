@@ -25,7 +25,7 @@ export class StripeService {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription" as const,
       allow_promotion_codes: true,
-      payment_method_collection: "if_required",
+      payment_method_collection: "if_required" as const,
       success_url: successUrl,
       cancel_url: cancelUrl,
       ...(customerEmail && !customerId ? { customer_email: customerEmail } : {}),
