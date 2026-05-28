@@ -17,7 +17,8 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
-    "expo": "^55.0.15",
+    "expo": "^55.0.26",
+    "react-dom": "19.2.0",
     "stripe": "^22.0.0",
     "stripe-replit-sync": "^1.0.0"
   }

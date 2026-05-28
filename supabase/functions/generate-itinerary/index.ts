@@ -310,31 +310,34 @@ async function enrichPlaces(
   const [oqResult, luckyResult, restResult] = await Promise.all([
     oqIds.length > 0
       ? supa
-          .from("o_que_fazer_rio_v2")
+          .from("atividades_rio")
           .select(
             "id,nome,bairro,categoria,tags_ia,momento_ideal,vibe,energia,duracao_media,photo_url,meu_olhar",
           )
+          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
           .in("id", oqIds)
       : Promise.resolve({ data: [] }),
     luckyIds.length > 0
       ? supa
-          .from("lucky_list_rio_v2")
+          .from("lucklist_rio")
           .select(
             "id,nome,bairro,tipo,tags_ia,momento_ideal,photo_url,meu_olhar",
           )
+          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
           .in("id", luckyIds)
       : Promise.resolve({ data: [] }),
     restIds.length > 0
       ? supa
-          .from("restaurantes")
-          // NOTE: restaurantes does NOT have momento_ideal or tags_ia columns.
+          .from("restaurantes_rio")
+          // NOTE: restaurantes_rio does NOT have momento_ideal or tags_ia columns.
           // Those fields are enriched via fallback logic below (["lunch"] and []).
           // isBreakfastRestaurant() uses especialidade; isDinnerRestaurant() is
-          // inoperative until momento_ideal is added to the restaurantes schema.
+          // inoperative until momento_ideal is added to the restaurantes_rio schema.
           .select(
             "id,nome,bairro,categoria,especialidade,perfil_publico,preco_nivel,photo_url,meu_olhar",
           )
           .eq("ativo", true)
+          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
           .in("id", restIds)
       : Promise.resolve({ data: [] }),
   ]);
@@ -558,16 +561,18 @@ async function fetchComplementaryContent(
 
     const [luckyResult, oqResult] = await Promise.all([
       supa
-        .from("lucky_list_rio_v2")
+        .from("lucklist_rio")
         .select("id,nome,bairro,tipo,tags_ia,momento_ideal,photo_url,meu_olhar")
         .eq("ativo", true)
+        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
         .limit(fetchLimit),
       supa
-        .from("o_que_fazer_rio_v2")
+        .from("atividades_rio")
         .select(
           "id,nome,bairro,tags_ia,momento_ideal,vibe,energia,duracao_media,photo_url,meu_olhar",
         )
         .eq("ativo", true)
+        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
         .limit(fetchLimit),
     ]);
 
@@ -673,11 +678,12 @@ async function fetchComplementaryContent(
 
     // Build budget-constrained query first, fallback to unrestricted if empty
     let budgetQuery = supa
-      .from("restaurantes")
+      .from("restaurantes_rio")
       .select(
         "id,nome,bairro,especialidade,perfil_publico,preco_nivel,tags_ia,momento_ideal,photo_url,meu_olhar",
       )
-      .eq("ativo", true);
+      .eq("ativo", true)
+      .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d");
 
     // Hard budget pre-filter — applies preco_nivel range constraint
     // Falls back to full pool below if budget query returns < 5 results
@@ -693,11 +699,12 @@ async function fetchComplementaryContent(
         `[fetchComplementary] budget="${budget}" filter returned ${restRowsRaw?.length ?? 0} restaurants — falling back to unrestricted pool`,
       );
       const { data: fallbackRows } = await supa
-        .from("restaurantes")
+        .from("restaurantes_rio")
         .select(
           "id,nome,bairro,especialidade,perfil_publico,preco_nivel,tags_ia,momento_ideal,photo_url,meu_olhar",
         )
         .eq("ativo", true)
+        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
         .limit(restLimit);
       restRowsRaw = fallbackRows;
     }
@@ -789,14 +796,15 @@ async function attachNeighborhoodMeta(
   if (bairros.length === 0) return places;
 
   const { data } = await supa
-    .from("stay_neighborhoods")
+    .from("bairros")
     .select(
-      "neighborhood_name,walkable,better_for,best_for_1,safety_solo_woman",
+      "nome,caminhavel,melhor_para,best_for_1,seguranca_mulher_sozinha",
     )
-    .in("neighborhood_name", bairros);
+    .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+    .in("nome", bairros);
 
   const nbMap = new Map(
-    (data ?? []).map((r: Record<string, string>) => [r.neighborhood_name, r]),
+    (data ?? []).map((r: Record<string, string>) => [r.nome, r]),
   );
 
   return places.map((p) => {
@@ -805,10 +813,10 @@ async function attachNeighborhoodMeta(
     return {
       ...p,
       neighborhood: {
-        walkable: nb.walkable ?? "",
-        better_for: nb.better_for ?? "",
+        walkable: nb.caminhavel ?? "",
+        better_for: nb.melhor_para ?? "",
         best_for_1: nb.best_for_1 ?? "",
-        safety_solo_woman: nb.safety_solo_woman ?? "",
+        safety_solo_woman: nb.seguranca_mulher_sozinha ?? "",
       },
     };
   });
@@ -1896,13 +1904,13 @@ const NOITE_CAP: Record<string, number> = {
 function categoriaToTable(cat: SavedCategory): string {
   switch (cat) {
     case "restaurante":
-      return "restaurantes";
+      return "restaurantes_rio";
     case "hotel":
-      return "stay_hotels";
+      return "hoteis";
     case "oQueFazer":
-      return "o_que_fazer_rio_v2";
+      return "atividades_rio";
     case "lucky":
-      return "lucky_list_rio_v2";
+      return "lucklist_rio";
   }
 }
 
@@ -3295,8 +3303,9 @@ async function selectAutoHotel(
   photo_url: string | null;
 } | null> {
   const { data: hotels } = await supa
-    .from("stay_hotels")
-    .select("id,nome,bairro,categoria,photo_url")
+    .from("hoteis")
+    .select("id,nome,bairro_nome,descricao,preco_nivel,photo_url")
+    .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
     .limit(60);
 
   if (!hotels || hotels.length === 0) {
@@ -3326,18 +3335,32 @@ async function selectAutoHotel(
         : [];
 
   const scored = (hotels as Record<string, unknown>[]).map((h) => {
-    const bairro = ((h.bairro as string) ?? "").toLowerCase();
-    const categ = ((h.categoria as string) ?? "").toLowerCase();
-    const zone = getZone((h.bairro as string) ?? "");
+    const bairro = ((h.bairro_nome as string) ?? "").toLowerCase();
+    const precoNivel = (h.preco_nivel as number) ?? 3;
+    const zone = getZone((h.bairro_nome as string) ?? "");
     let score = 0;
 
-    // Budget match
-    if (budgetSignals.some((s) => categ.includes(s))) score += 5;
-    if (antiBudgetSignals.some((s) => categ.includes(s))) score -= 4;
+    // Budget match using preco_nivel: 1=essencial, 2-3=conforto, 4-5=sofisticado
+    if (budget === "sofisticado" && precoNivel >= 4) score += 5;
+    if (budget === "sofisticado" && precoNivel <= 2) score -= 4;
+    if (budget === "essencial" && precoNivel <= 2) score += 5;
+    if (budget === "essencial" && precoNivel >= 4) score -= 4;
+    if (budget === "conforto" && precoNivel >= 2 && precoNivel <= 3) score += 3;
 
     // Preference neighborhood match
     if ([...preferredNeighborhoods].some((nb) => bairro.includes(nb)))
       score += 4;
+
+    // Zone proximity to itinerary cluster
+    if (itinerarZones.has(zone)) score += 3;
+    else {
+      for (const iz of itinerarZones) {
+        if (Math.abs(zone - iz) === 1) {
+          score += 1;
+          break;
+        }
+      }
+    }
 
     // Zone proximity to itinerary cluster
     if (itinerarZones.has(zone)) score += 3;
@@ -3358,13 +3381,13 @@ async function selectAutoHotel(
   if (!best) return null;
 
   console.log(
-    `[selectAutoHotel] auto-selected "${best.nome}" (bairro=${best.bairro}, categoria=${best.categoria}, score=${scored[0].score})`,
+    `[selectAutoHotel] auto-selected "${best.nome}" (bairro=${best.bairro_nome}, preco_nivel=${best.preco_nivel}, score=${scored[0].score})`,
   );
 
   return {
     id: String(best.id),
     nome: (best.nome as string) || "Hotel",
-    bairro: (best.bairro as string) || "",
+    bairro: (best.bairro_nome as string) || "",
     photo_url: sanitizePhotoUrl(best.photo_url as string | null),
   };
 }
@@ -3615,8 +3638,8 @@ serve(async (req) => {
     if (primaryHotel) {
       // Scenario A: user saved a hotel
       const { data: hotelRow } = await supa
-        .from("stay_hotels")
-        .select("id,nome,bairro,photo_url")
+        .from("hoteis")
+        .select("id,nome,bairro_nome,photo_url")
         .eq("id", primaryHotel.id)
         .maybeSingle();
 
@@ -3624,7 +3647,7 @@ serve(async (req) => {
         resolvedHotelRow = {
           id: String(hotelRow.id),
           nome: (hotelRow.nome as string) || primaryHotel.titulo,
-          bairro: (hotelRow.bairro as string) || primaryHotel.localizacao || "",
+          bairro: (hotelRow.bairro_nome as string) || primaryHotel.localizacao || "",
           photo_url: sanitizePhotoUrl(hotelRow.photo_url as string | null),
         };
       }
