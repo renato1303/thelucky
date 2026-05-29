@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "preinstall": "node -e \"try{require('fs').unlinkSync('package-lock.json')}catch(e){}try{require('fs').unlinkSync('yarn.lock')}catch(e){}if(!((process.env.npm_config_user_agent||'').startsWith('pnpm/')||(process.env.npm_config_user_agent||'').startsWith('pnpm'))){console.error('Use pnpm instead');process.exit(1)}\"",
     "build:libs": "pnpm --filter \"./lib/**\" run build",
     "build:api": "pnpm --filter \"./artifacts/api-server\" run build",
     "build": "pnpm run build:libs && pnpm run build:api && pnpm run typecheck",
@@ -17,8 +17,6 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
-    "expo": "^55.0.26",
-    "react-dom": "19.1.0",
     "stripe": "^22.0.0",
     "stripe-replit-sync": "^1.0.0"
   },
