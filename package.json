@@ -2,6 +2,7 @@
   "name": "workspace",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@11.0.8",
   "scripts": {
     "preinstall": "node -e \"try{require('fs').unlinkSync('package-lock.json')}catch(e){}try{require('fs').unlinkSync('yarn.lock')}catch(e){}if(!((process.env.npm_config_user_agent||'').startsWith('pnpm/')||(process.env.npm_config_user_agent||'').startsWith('pnpm'))){console.error('Use pnpm instead');process.exit(1)}\"",
     "build:libs": "pnpm --filter \"./lib/**\" run build",
@@ -19,11 +20,5 @@
   "dependencies": {
     "stripe": "^22.0.0",
     "stripe-replit-sync": "^1.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "react": "19.1.0",
-      "react-dom": "19.1.0"
-    }
   }
 }
