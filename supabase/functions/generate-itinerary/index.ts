@@ -321,7 +321,7 @@ async function enrichPlaces(
       ? supa
           .from("lucklist_rio")
           .select(
-            "id,nome,bairro,tipo,tags_ia,momento_ideal,photo_url,meu_olhar",
+            "id,nome,bairro,categoria,meu_olhar,o_que_pedir,quando_ir,photo_url",
           )
           .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
           .in("id", luckyIds)
@@ -404,7 +404,7 @@ async function enrichPlaces(
         console.log("PHOTO SOURCE", s.id, photo_url);
       } else {
         // ── GATE 3a: oQueFazer ID not in Supabase → reject ───────────────────
-        console.log("REJECTED (not in o_que_fazer_rio_v2):", s.titulo, s.id);
+        console.log("REJECTED (not in atividades_rio):", s.titulo, s.id);
         continue;
       }
     } else if (s.categoria === "lucky") {
@@ -413,16 +413,15 @@ async function enrichPlaces(
       if (row) {
         area = (row.bairro as string) || area;
         name = (row.nome as string) || name;
-        tags = (row.tags_ia as string[]) ?? [];
-        momento = (row.momento_ideal as string[]) ?? [];
+        tags = [];
+        momento = [];
         vibe_tags = [];
         energia = "medium";
         photo_url = sanitizePhotoUrl(row.photo_url as string | null);
         meu_olhar = (row.meu_olhar as string | null) ?? null;
         console.log("PHOTO SOURCE", s.id, photo_url);
       } else {
-        // ── GATE 3b: lucky ID not in Supabase → reject ───────────────────────
-        console.log("REJECTED (not in lucky_list_rio_v2):", s.titulo, s.id);
+        console.log("REJECTED (not in lucklist_rio):", s.titulo, s.id);
         continue;
       }
     } else if (s.categoria === "restaurante") {
@@ -562,7 +561,7 @@ async function fetchComplementaryContent(
     const [luckyResult, oqResult] = await Promise.all([
       supa
         .from("lucklist_rio")
-        .select("id,nome,bairro,tipo,tags_ia,momento_ideal,photo_url,meu_olhar")
+        .select("id,nome,bairro,categoria,meu_olhar,o_que_pedir,quando_ir,photo_url")
         .eq("ativo", true)
         .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
         .limit(fetchLimit),
@@ -583,29 +582,26 @@ async function fetchComplementaryContent(
       const id = String(row.id ?? "");
       if (!id || existingIds.has(id)) continue;
 
-      const tipo = ((row.tipo as string) ?? "").toLowerCase();
-      // Skip lucky items that are food/drink venues (handled in restaurant block)
+      const cat = ((row.categoria as string) ?? "").toLowerCase();
       if (
-        tipo.includes("restaurante") ||
-        tipo.includes("bar") ||
-        tipo.includes("café")
+        cat.includes("restaurante") ||
+        cat.includes("bar") ||
+        cat.includes("café")
       )
         continue;
 
       const area = (row.bairro as string) || "Rio de Janeiro";
-      const tags = (row.tags_ia as string[]) ?? [];
-      const momento = (row.momento_ideal as string[]) ?? [];
 
       actCandidates.push({
         id,
         name: (row.nome as string) || area,
         categoria: "lucky",
-        source_table: "lucky_list_rio_v2",
+        source_table: "lucklist_rio",
         area,
         zone: getZone(area),
-        momento_ideal: Array.isArray(momento) ? momento : [],
+        momento_ideal: [],
         energia: "medium",
-        tags: Array.isArray(tags) ? tags : [],
+        tags: [],
         vibe_tags: [],
         duracao: "1-2h",
         photo_url: sanitizePhotoUrl(row.photo_url as string | null),
@@ -628,7 +624,7 @@ async function fetchComplementaryContent(
         id,
         name: (row.nome as string) || area,
         categoria: "oQueFazer",
-        source_table: "o_que_fazer_rio_v2",
+        source_table: "atividades_rio",
         area,
         zone: getZone(area),
         momento_ideal: (row.momento_ideal as string[]) ?? [],
@@ -798,7 +794,7 @@ async function attachNeighborhoodMeta(
   const { data } = await supa
     .from("bairros")
     .select(
-      "nome,caminhavel,melhor_para,best_for_1,seguranca_mulher_sozinha",
+      "nome,caminhavel,melhor_para,seguranca_mulher_sozinha",
     )
     .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
     .in("nome", bairros);
@@ -815,7 +811,7 @@ async function attachNeighborhoodMeta(
       neighborhood: {
         walkable: nb.caminhavel ?? "",
         better_for: nb.melhor_para ?? "",
-        best_for_1: nb.best_for_1 ?? "",
+        best_for_1: "",
         safety_solo_woman: nb.seguranca_mulher_sozinha ?? "",
       },
     };
