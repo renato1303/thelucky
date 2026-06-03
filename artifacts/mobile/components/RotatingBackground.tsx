@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, ImageSourcePropType, StyleSheet } from "react-native";
+import { Animated, ImageSourcePropType, StyleSheet, View } from "react-native";
 
 type Props = {
   pool: ImageSourcePropType[];
