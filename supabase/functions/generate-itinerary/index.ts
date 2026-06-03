@@ -19,6 +19,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ── Destination ID map ────────────────────────────────────────────────────────
+
+const DESTINO_IDS: Record<string, string> = {
+  "rio-de-janeiro": "7f047742-427f-4b11-8286-781af899c57d",
+  "miami":          "88f3aa4e-eb5b-46e4-a10e-869a83b2ea25",
+  "nova-york":      "24c45a84-70a9-43b6-b1fa-0063457d9644",
+  "ibiza":          "79f6d0cd-b490-4037-92a8-4bf371b8511e",
+};
+
 // ── CORS ──────────────────────────────────────────────────────────────────────
 
 const corsHeaders = {
@@ -49,12 +58,13 @@ interface Preferences {
 }
 
 interface RequestBody {
-  savedItems: SavedItemInput[];
+  savedItems: RawItem[];
   destination?: string;
   preferences?: Preferences;
   requestedDays?: number;
-  arrivalDate?: string; // ISO date string "YYYY-MM-DD"
-  departureDate?: string; // ISO date string "YYYY-MM-DD"
+  arrivalDate?: string;
+  departureDate?: string;
+  destinoSlug?: string;
 }
 
 /** Fully enriched place — unified source of truth for all 5 deterministic steps */
@@ -314,7 +324,7 @@ async function enrichPlaces(
           .select(
             "id,nome,bairro,categoria,tags_ia,momento_ideal,vibe,energia,duracao_media,photo_url,meu_olhar",
           )
-          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+          .eq("destino_id", DESTINO_ID)
           .in("id", oqIds)
       : Promise.resolve({ data: [] }),
     luckyIds.length > 0
@@ -323,7 +333,7 @@ async function enrichPlaces(
           .select(
             "id,nome,bairro,categoria,meu_olhar,o_que_pedir,quando_ir,photo_url",
           )
-          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+          .eq("destino_id", DESTINO_ID)
           .in("id", luckyIds)
       : Promise.resolve({ data: [] }),
     restIds.length > 0
@@ -337,7 +347,7 @@ async function enrichPlaces(
             "id,nome,bairro,categoria,especialidade,perfil_publico,preco_nivel,photo_url,meu_olhar",
           )
           .eq("ativo", true)
-          .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+          .eq("destino_id", DESTINO_ID)
           .in("id", restIds)
       : Promise.resolve({ data: [] }),
   ]);
@@ -563,7 +573,7 @@ async function fetchComplementaryContent(
         .from("lucklist_rio")
         .select("id,nome,bairro,categoria,meu_olhar,o_que_pedir,quando_ir,photo_url")
         .eq("ativo", true)
-        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+        .eq("destino_id", DESTINO_ID)
         .limit(fetchLimit),
       supa
         .from("atividades_rio")
@@ -571,7 +581,7 @@ async function fetchComplementaryContent(
           "id,nome,bairro,tags_ia,momento_ideal,vibe,energia,duracao_media,photo_url,meu_olhar",
         )
         .eq("ativo", true)
-        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+        .eq("destino_id", DESTINO_ID)
         .limit(fetchLimit),
     ]);
 
@@ -679,7 +689,7 @@ async function fetchComplementaryContent(
         "id,nome,bairro,especialidade,perfil_publico,preco_nivel,tags_ia,momento_ideal,photo_url,meu_olhar",
       )
       .eq("ativo", true)
-      .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d");
+      .eq("destino_id", DESTINO_ID);
 
     // Hard budget pre-filter — applies preco_nivel range constraint
     // Falls back to full pool below if budget query returns < 5 results
@@ -700,7 +710,7 @@ async function fetchComplementaryContent(
           "id,nome,bairro,especialidade,perfil_publico,preco_nivel,tags_ia,momento_ideal,photo_url,meu_olhar",
         )
         .eq("ativo", true)
-        .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+        .eq("destino_id", DESTINO_ID)
         .limit(restLimit);
       restRowsRaw = fallbackRows;
     }
@@ -3404,7 +3414,16 @@ serve(async (req) => {
       requestedDays,
       arrivalDate,
       departureDate,
+      destinoSlug = "rio-de-janeiro",
     } = body;
+
+    const DESTINO_IDS: Record<string, string> = {
+      "rio-de-janeiro": "7f047742-427f-4b11-8286-781af899c57d",
+      "miami":          "88f3aa4e-eb5b-46e4-a10e-869a83b2ea25",
+      "nova-york":      "24c45a84-70a9-43b6-b1fa-0063457d9644",
+      "ibiza":          "79f6d0cd-b490-4037-92a8-4bf371b8511e",
+    };
+    const DESTINO_ID = DESTINO_IDS[destinoSlug] ?? DESTINO_IDS["rio-de-janeiro"];
 
     // ── Step D: determine hotel zone anchor ───────────────────────────────────
     // Source: raw savedItems where categoria === "hotel" (enrichPlaces skips hotels).

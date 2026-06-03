@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { buildMediaUrl } from "@/lib/mediaUrl";
 
-const RIO_DESTINO_ID = "7f047742-427f-4b11-8286-781af899c57d";
+import { DESTINO_IDS } from "@/contexts/GuiaContext";
 
 export type Hotel = {
   id: string;
@@ -32,7 +32,8 @@ type State = {
   error: string | null;
 };
 
-export function useHoteis(destinoId: string = RIO_DESTINO_ID): State {
+export function useHoteis(destinoSlug: string = "rio-de-janeiro"): State {
+  const destinoId = DESTINO_IDS[destinoSlug] ?? DESTINO_IDS["rio-de-janeiro"];
   const [hoteis, setHoteis] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

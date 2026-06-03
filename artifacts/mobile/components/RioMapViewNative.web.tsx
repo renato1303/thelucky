@@ -7,6 +7,6 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-export default function RioMapViewNativeWeb(_props: Props) {
+export default function DestinationMapViewNativeWeb(_props: Props) {
   return <View />;
 }

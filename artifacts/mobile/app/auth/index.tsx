@@ -120,20 +120,22 @@ function HeroBackground() {
 
   return (
     <>
-      <Image
-        source={resolvedPool[currentIdx]}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-        blurRadius={20}
-        pointerEvents="none"
-      />
-      <Animated.Image
-        source={resolvedPool[nextIdx]}
-        style={[StyleSheet.absoluteFill, { opacity: nextOpacity }]}
-        resizeMode="cover"
-        blurRadius={20}
-        pointerEvents="none"
-      />
+      <View pointerEvents="none">
+        <Image
+          source={resolvedPool[currentIdx]}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+          blurRadius={20}
+        />
+      </View>
+      <View pointerEvents="none">
+        <Animated.Image
+          source={resolvedPool[nextIdx]}
+          style={[StyleSheet.absoluteFill, { opacity: nextOpacity }]}
+          resizeMode="cover"
+          blurRadius={20}
+        />
+      </View>
       <View style={s.heroOverlay} pointerEvents="none" />
     </>
   );
@@ -388,7 +390,7 @@ function SignupScreen({
         </TouchableOpacity>
 
         <TouchableOpacity style={[s.socialBtn, { opacity: 0.5 }]} activeOpacity={0.7} accessibilityRole="button" disabled>
-          <AntDesign name="apple1" size={17} color="#FFFFFF" />
+          <AntDesign name="apple" size={17} color="#FFFFFF" />
           <Text style={s.socialBtnText} suppressHighlighting>Apple</Text>
         </TouchableOpacity>
       </View>

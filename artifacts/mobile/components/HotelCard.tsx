@@ -50,7 +50,7 @@ export function HotelCard({
       ]}
     >
       {image ? (
-        <Image source={image} style={styles.image} resizeMode="cover" />
+        <Image       source={image ?? undefined} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={[styles.image, { backgroundColor: "#000" }]} />
       )}
@@ -73,7 +73,7 @@ export function HotelCard({
       {id && (
         <View style={styles.bookmark}>
           <BookmarkButton
-            item={{ id, titulo: nome, localizacao, image, categoria: "hotel" }}
+            item={{ id, titulo: nome, localizacao, image: image ?? undefined, categoria: "hotel" }}
           />
         </View>
       )}

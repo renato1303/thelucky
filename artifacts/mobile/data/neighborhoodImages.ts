@@ -7,7 +7,8 @@
  * Callers must source images from Supabase or show nothing.
  */
 
-export type NeighborhoodImageSource = { uri: string } | null;
+import type { ImageSourcePropType } from "react-native";
+export type NeighborhoodImageSource = ImageSourcePropType;
 
 /**
  * @deprecated Always returns null. Use Supabase photo_url directly.
@@ -23,6 +24,6 @@ export function getRioNeighborhoodImage(
  */
 export function getNeighborhoodImage(
   _neighborhoodName: string,
-): null {
-  return null;
+): NeighborhoodImageSource {
+  return null as unknown as NeighborhoodImageSource;
 }

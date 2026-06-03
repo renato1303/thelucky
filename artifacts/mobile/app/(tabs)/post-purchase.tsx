@@ -161,13 +161,13 @@ export default function PostPurchaseScreen() {
         </Text>
         <Pressable
           style={({ pressed }) => [s.cta, pressed && { opacity: 0.85 }]}
-          onPress={() => router.replace("/(tabs)/")}
+          onPress={() => router.replace("/")}
         >
           <Text style={s.ctaText}>Ir para o início</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [s.secondaryCta, pressed && { opacity: 0.7 }]}
-          onPress={() => router.replace("/(tabs)/subscription")}
+          onPress={() => router.replace("/subscription")}
         >
           <Text style={s.secondaryCtaText}>Ver planos</Text>
         </Pressable>
@@ -215,7 +215,7 @@ export default function PostPurchaseScreen() {
 
       <Pressable
         style={({ pressed }) => [s.secondaryCta, pressed && { opacity: 0.7 }]}
-        onPress={() => router.replace("/(tabs)/")}
+        onPress={() => router.replace("/")}
       >
         <Text style={s.secondaryCtaText}>Ir para o início</Text>
       </Pressable>

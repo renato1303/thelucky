@@ -24,11 +24,29 @@ import {
 } from "react-native";
 import type { Bairro } from "@/hooks/useBairros";
 
-// ── Leaflet HTML generator ────────────────────────────────────────────────────
+function computeCenter(bairros: Bairro[]): { lat: number; lng: number; zoom: number } {
+  const valid = bairros.filter((b) => b.lat != null && b.lng != null);
+  if (valid.length === 0) {
+    return { lat: -22.975, lng: -43.21, zoom: 11 };
+  }
+  if (valid.length === 1) {
+    return { lat: valid[0].lat!, lng: valid[0].lng!, zoom: 13 };
+  }
+  const sumLat = valid.reduce((acc, b) => acc + b.lat!, 0);
+  const sumLng = valid.reduce((acc, b) => acc + b.lng!, 0);
+  return { lat: sumLat / valid.length, lng: sumLng / valid.length, zoom: 11 };
+}
+
+interface MapCenterConfig {
+  centerLat: number;
+  centerLng: number;
+  zoom: number;
+}
 
 function buildLeafletHTML(
   bairros: Bairro[],
   selectedId: string | null,
+  centerConfig: MapCenterConfig,
 ): string {
   const bairrosJSON = JSON.stringify(
     bairros.map((b) => ({
@@ -102,22 +120,23 @@ function buildLeafletHTML(
   <script>
     var BAIRROS = ${bairrosJSON};
     var SELECTED_ID = ${JSON.stringify(selectedId)};
+    var DEFAULT_CENTER = { lat: ${centerConfig.centerLat}, lng: ${centerConfig.centerLng}, zoom: ${centerConfig.zoom} };
 
     var centerLat, centerLng, zoom;
-    if (BAIRROS.length === 0) {
-      centerLat = -22.975;
-      centerLng = -43.21;
-      zoom = 11;
-    } else if (BAIRROS.length === 1) {
+    if (BAIRROS.length === 1) {
       centerLat = BAIRROS[0].lat;
       centerLng = BAIRROS[0].lng;
       zoom = 13;
-    } else {
+    } else if (BAIRROS.length > 1) {
       var sumLat = 0, sumLng = 0;
       BAIRROS.forEach(function(b) { sumLat += b.lat; sumLng += b.lng; });
       centerLat = sumLat / BAIRROS.length;
       centerLng = sumLng / BAIRROS.length;
       zoom = 11;
+    } else {
+      centerLat = DEFAULT_CENTER.lat;
+      centerLng = DEFAULT_CENTER.lng;
+      zoom = DEFAULT_CENTER.zoom;
     }
 
     var map = L.map('map', {
@@ -177,22 +196,21 @@ function buildLeafletHTML(
 </html>`;
 }
 
-// ── Props ─────────────────────────────────────────────────────────────────────
-
 type MapProps = {
   bairros: Bairro[];
   selectedBairroId: string | null;
   onBairroPress: (bairro: Bairro | null) => void;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
+  centerConfig?: MapCenterConfig;
+  destinationKey: string;
 };
 
-// ── Web component ─────────────────────────────────────────────────────────────
-
-function DestinationMapViewWeb({ bairros, selectedBairroId, onBairroPress, loading, style }: MapProps) {
+function DestinationMapViewWeb({ bairros, selectedBairroId, onBairroPress, loading, style, centerConfig, destinationKey }: MapProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const html = buildLeafletHTML(bairros, selectedBairroId);
+  const fallbackCenter: MapCenterConfig = { centerLat: -22.9068, centerLng: -43.1729, zoom: 11 };
+  const html = buildLeafletHTML(bairros, selectedBairroId, centerConfig ?? fallbackCenter);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -219,7 +237,7 @@ function DestinationMapViewWeb({ bairros, selectedBairroId, onBairroPress, loadi
   return (
     <View style={[s.container, style]}>
       <iframe
-        key={selectedBairroId}
+        key={`${destinationKey}-${selectedBairroId ?? "none"}`}
         ref={iframeRef as any}
         srcDoc={html}
         style={{ width: "100%", height: "100%", border: "none", background: "#12100E" } as any}
@@ -229,14 +247,12 @@ function DestinationMapViewWeb({ bairros, selectedBairroId, onBairroPress, loadi
   );
 }
 
-// ── Native component ──────────────────────────────────────────────────────────
-
-function DestinationMapViewNative({ bairros, selectedBairroId, onBairroPress, loading, style }: MapProps) {
-  // Lazy load to avoid bundling WebView on web
+function DestinationMapViewNative({ bairros, selectedBairroId, onBairroPress, loading, style, centerConfig, destinationKey }: MapProps) {
   const WebViewModule = require("react-native-webview");
   const WebView = WebViewModule.WebView;
 
-  const html = buildLeafletHTML(bairros, selectedBairroId);
+  const fallbackCenter: MapCenterConfig = { centerLat: -22.9068, centerLng: -43.1729, zoom: 11 };
+  const html = buildLeafletHTML(bairros, selectedBairroId, centerConfig ?? fallbackCenter);
 
   const handleMessage = (event: { nativeEvent: { data: string } }) => {
     try {
@@ -259,7 +275,7 @@ function DestinationMapViewNative({ bairros, selectedBairroId, onBairroPress, lo
   return (
     <View style={[s.container, style]}>
       <WebView
-        key={selectedBairroId}
+        key={`${destinationKey}-${selectedBairroId ?? "none"}`}
         source={{ html }}
         style={s.webview}
         scrollEnabled={false}
@@ -270,8 +286,6 @@ function DestinationMapViewNative({ bairros, selectedBairroId, onBairroPress, lo
     </View>
   );
 }
-
-// ── Exported component ────────────────────────────────────────────────────────
 
 export default function DestinationMapView(props: MapProps) {
   if (Platform.OS === "web") {

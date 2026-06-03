@@ -26,7 +26,7 @@ import Colors from "@/constants/colors";
 import { destinos } from "@/data/mockData";
 import { useRestaurantes } from "@/hooks/useRestaurantes";
 import { useBairros } from "@/hooks/useBairros";
-import RioMapView from "@/components/RioMapView";
+import DestinationMapView from "@/components/DestinationMapView";
 import { useGuia } from "@/context/GuiaContext";
 import { getImageForEntity } from "@/utils/getImageForEntity";
 
@@ -80,7 +80,7 @@ export default function ComerBemScreen() {
 
       {/* ── Fixed map section ── */}
       <View style={s.mapSection}>
-        <RioMapView
+        <DestinationMapView
           bairros={bairros}
           selectedBairroId={null}
           onBairroPress={handleBairroPress}

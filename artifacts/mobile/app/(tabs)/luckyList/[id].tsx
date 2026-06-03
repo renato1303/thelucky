@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { destinos } from "@/data/mockData";
-import RioMapView from "@/components/RioMapView";
+import DestinationMapView from "@/components/DestinationMapView";
 import { useGuia } from "@/context/GuiaContext";
 import { useLuckyList, type LuckyListItem } from "@/hooks/useLuckyList";
 import { useBairros } from "@/hooks/useBairros";
@@ -92,7 +92,7 @@ export default function LuckyListScreen() {
 
       {/* ── Fixed map section ── */}
       <View style={s.mapSection}>
-        <RioMapView
+        <DestinationMapView
           bairros={bairros}
           selectedBairroId={null}
           onBairroPress={handleBairroPress}

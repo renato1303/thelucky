@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { destinos } from "@/data/mockData";
-import RioMapView from "@/components/RioMapView";
+import DestinationMapView from "@/components/DestinationMapView";
 import { useGuia } from "@/context/GuiaContext";
 import { useOQueFazer } from "@/hooks/useOQueFazer";
 import { useBairros } from "@/hooks/useBairros";
@@ -65,8 +65,8 @@ export default function OQueFazerScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const destino    = destinos.find((d) => d.id === id) ?? destinos[0];
-  const { atividades, loading, error } = useOQueFazer(RIO_DESTINO_ID);
-  const { bairros, loading: bairrosLoading } = useBairros(RIO_DESTINO_ID);
+  const { atividades, loading, error } = useOQueFazer(id);
+  const { bairros, loading: bairrosLoading } = useBairros(id);
   const descricao  = DESCRICOES[destino.id] ?? DEFAULT_DESCRICAO;
   const { save, unsave, isSaved } = useGuia();
 
@@ -93,7 +93,7 @@ export default function OQueFazerScreen() {
 
       {/* ── Fixed map section ── */}
       <View style={s.mapSection}>
-        <RioMapView
+        <DestinationMapView
           bairros={bairros}
           selectedBairroId={null}
           onBairroPress={handleBairroPress}

@@ -58,21 +58,21 @@ export function RotatingBackground({
 
   return (
     <>
-      <Animated.Image
-        source={resolvedPool[currentIdx]}
-        style={styles.fill}
-        resizeMode="cover"
-        blurRadius={blurRadius}
-        pointerEvents="none"
-        onLoad={handleFirstLoad}
-      />
+    <View pointerEvents="none">
       <Animated.Image
         source={resolvedPool[nextIdx]}
-        style={[styles.fill, { opacity: nextOpacity }]}
+        style={[StyleSheet.absoluteFill, { opacity: nextOpacity }]}
         resizeMode="cover"
-        blurRadius={blurRadius}
-        pointerEvents="none"
+        blurRadius={20}
       />
+    </View>
+    <View pointerEvents="none">
+      <Animated.Image
+        source={resolvedPool[currentIdx]}
+        style={[StyleSheet.absoluteFill, { opacity: 1 }]} resizeMode="cover"
+        blurRadius={20}
+      />
+    </View>
     </>
   );
 }

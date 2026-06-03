@@ -78,7 +78,7 @@ export function PlaceCard({
                 id: id!,
                 titulo,
                 localizacao: localizacao!,
-                image,
+                image: image ?? undefined,
                 categoria: saveCategoria!,
               }}
             />
@@ -119,7 +119,7 @@ export function PlaceCard({
               id: id!,
               titulo,
               localizacao: localizacao!,
-              image,
+              image: image ?? undefined,
               categoria: saveCategoria!,
             }}
           />

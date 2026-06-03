@@ -30,6 +30,13 @@ import {
 
 export type EntityType = "neighborhood" | "restaurant" | "hotel" | "activity" | "city";
 
+export function sanitizePhotoUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (trimmed === "") return undefined;
+  return trimmed;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Module-level result cache — keyed by "type:name:localizacao:platform"
 // ─────────────────────────────────────────────────────────────────────────────

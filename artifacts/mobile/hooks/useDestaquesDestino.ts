@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { buildMediaUrl } from "@/lib/mediaUrl";
+import { DESTINO_IDS } from "@/contexts/GuiaContext";
 
 export interface DestaqueDestino {
   id: string;
@@ -38,7 +39,8 @@ type State = {
   error: string | null;
 };
 
-export function useDestaquesDestino(destinoId: string): State {
+export function useDestaquesDestino(destinoSlug: string = "rio-de-janeiro"): State {
+  const destinoId = DESTINO_IDS[destinoSlug] ?? DESTINO_IDS["rio-de-janeiro"];
   const [essencial, setEssencial] = useState<DestaqueDestino[]>([]);
   const [agora, setAgora] = useState<DestaqueDestino[]>([]);
   const [loading, setLoading] = useState(true);

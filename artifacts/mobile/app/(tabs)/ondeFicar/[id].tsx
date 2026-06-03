@@ -22,19 +22,17 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useBairros, type Bairro } from "@/hooks/useBairros";
-import RioMapView from "@/components/RioMapView";
+import { DESTINATION_CONFIG } from "@/contexts/GuiaContext";
+import DestinationMapView from "@/components/DestinationMapView";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAP_H = Math.round(SCREEN_HEIGHT * 0.50);
-const CARD_SIZE = SCREEN_WIDTH - 48; // Square card with padding
+const CARD_SIZE = SCREEN_WIDTH - 48;
 
-// Colors
 const PETROL = "#1B4F72";
 const TEAL = "#4ECDC4";
 const BG_DARK = "#0A0A0A";
 
-// Rio de Janeiro destino_id
-const RIO_DESTINO_ID = "7f047742-427f-4b11-8286-781af899c57d";
 const FALLBACK_IMAGE = "https://bkwlximkadmlnbgjcrdp.supabase.co/storage/v1/object/public/media/rio-de-janeiro/hero/foto/imagehero01.jpg";
 
 // ── Pill builders with emojis ─────────────────────────────────────────────────
@@ -90,7 +88,8 @@ export default function OndeFicarScreen() {
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   // Fetch bairros from Supabase
-  const { bairros, loading: loadingBairros } = useBairros(RIO_DESTINO_ID);
+  const destConfig = DESTINATION_CONFIG[id];
+  const { bairros, loading: loadingBairros } = useBairros(destConfig?.uuid ?? "");
 
   // Selected bairro state
   const [selectedBairro, setSelectedBairro] = useState<Bairro | null>(null);
@@ -182,12 +181,14 @@ export default function OndeFicarScreen() {
 
       {/* ── Map section (top 50%) ── */}
       <View style={s.mapSection}>
-        <RioMapView
+        <DestinationMapView
           bairros={bairros}
           selectedBairroId={selectedBairro?.id ?? null}
           onBairroPress={handleBairroPress}
           loading={loadingBairros}
           style={StyleSheet.absoluteFillObject}
+          centerConfig={destConfig ? { centerLat: destConfig.centerLat, centerLng: destConfig.centerLng, zoom: destConfig.zoom } : undefined}
+          destinationKey={id}
         />
 
         {/* Back button */}

@@ -35,6 +35,7 @@ interface RequestBody {
   history?:    Message[];
   deviceId:    string;
   destination?: string;
+  destinoSlug?: string;
 }
 
 // ── Premium check ─────────────────────────────────────────────────────────────

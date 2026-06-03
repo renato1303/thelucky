@@ -161,7 +161,7 @@ export default function SubscriptionScreen() {
         await supabase.auth.refreshSession();
         await markPremium();
         setRestoreMsg("Acesso restaurado! Você já é Lucky Premium.");
-        setTimeout(() => router.replace("/(tabs)/"), 1800);
+        setTimeout(() => router.replace("/"), 1800);
       } else if (data.reason === "no_customer") {
         setRestoreMsg("Nenhuma compra encontrada nesta conta.");
       } else {
