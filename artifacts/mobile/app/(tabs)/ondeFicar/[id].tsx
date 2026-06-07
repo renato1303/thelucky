@@ -229,6 +229,15 @@ export default function OndeFicarScreen() {
           >
             {/* Square card with image */}
             <View style={s.squareCard}>
+              {(() => {
+                console.log("selectedBairro?.nome:", selectedBairro?.nome);
+                console.log("selectedBairro?.slug:", selectedBairro?.slug);
+                console.log("selectedBairro?.hero_image_url:", selectedBairro?.hero_image_url);
+                if (selectedBairro?.hero_image_url) {
+                  console.log("buildMediaUrl(selectedBairro.hero_image_url):", buildMediaUrl(selectedBairro.hero_image_url));
+                }
+                return null;
+              })()}
               <Image
                 source={{ uri: selectedBairro.hero_image_url ? buildMediaUrl(selectedBairro.hero_image_url) : FALLBACK_IMAGE }}
                 style={s.squareCardImage}
