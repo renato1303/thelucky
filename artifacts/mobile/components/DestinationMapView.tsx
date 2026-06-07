@@ -171,7 +171,7 @@ function buildLeafletHTML(
 
       marker.on('click', function(e) {
         L.DomEvent.stopPropagation(e);
-        var msg = { type: 'bairroClick', bairro: b };
+        var msg = { type: 'bairroClick', bairroId: b.id };
         if (typeof window.ReactNativeWebView !== 'undefined') {
           window.ReactNativeWebView.postMessage(JSON.stringify(msg));
         } else {
@@ -199,7 +199,7 @@ function buildLeafletHTML(
 type MapProps = {
   bairros: Bairro[];
   selectedBairroId: string | null;
-  onBairroPress: (bairro: Bairro | null) => void;
+  onBairroPress: (bairroId: string | null) => void;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   centerConfig?: MapCenterConfig;
@@ -217,7 +217,7 @@ function DestinationMapViewWeb({ bairros, selectedBairroId, onBairroPress, loadi
 
     function handler(e: MessageEvent) {
       if (e.data && e.data.type === "bairroClick") {
-        onBairroPress(e.data.bairro ?? null);
+        onBairroPress(e.data.bairroId ?? null);
       }
     }
     window.addEventListener("message", handler);
@@ -258,7 +258,7 @@ function DestinationMapViewNative({ bairros, selectedBairroId, onBairroPress, lo
     try {
       const msg = JSON.parse(event.nativeEvent.data);
       if (msg.type === "bairroClick") {
-        onBairroPress(msg.bairro ?? null);
+        onBairroPress(msg.bairroId ?? null);
       }
     } catch {}
   };

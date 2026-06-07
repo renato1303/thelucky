@@ -120,19 +120,21 @@ export default function OndeFicarScreen() {
   }, [selectedBairro?.id]);
 
   // Handle bairro selection from map
-  function handleBairroPress(bairro: Bairro | null) {
-    if (bairro) {
-      // Cross-fade when changing bairro
-      if (selectedBairro && selectedBairro.id !== bairro.id) {
-        fadeAnim.setValue(0);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }
-      setSelectedBairro(bairro);
+  function handleBairroPress(bairroId: string | null) {
+    if (!bairroId) return;
+    const fullBairro = bairros.find((b) => b.id === bairroId);
+    if (!fullBairro) return;
+
+    // Cross-fade when changing bairro
+    if (selectedBairro && selectedBairro.id !== fullBairro.id) {
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
     }
+    setSelectedBairro(fullBairro);
   }
 
   // "Escolher por mim" — pick random bairro (not the current one)
