@@ -22,6 +22,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useBairros, type Bairro } from "@/hooks/useBairros";
+import { buildMediaUrl } from "@/lib/mediaUrl";
 import { DESTINATION_CONFIG } from "@/contexts/GuiaContext";
 import DestinationMapView from "@/components/DestinationMapView";
 
@@ -229,7 +230,7 @@ export default function OndeFicarScreen() {
             {/* Square card with image */}
             <View style={s.squareCard}>
               <Image
-                source={{ uri: selectedBairro.hero_image_url || FALLBACK_IMAGE }}
+                source={{ uri: selectedBairro.hero_image_url ? buildMediaUrl(selectedBairro.hero_image_url) : FALLBACK_IMAGE }}
                 style={s.squareCardImage}
                 resizeMode="cover"
               />
