@@ -30,8 +30,6 @@ import { destinos } from "@/data/mockData";
 import { useOQueFazer, type Atividade } from "@/hooks/useOQueFazer";
 import { useLuckyList, type LuckyListItem } from "@/hooks/useLuckyList";
 
-const FALLBACK_IMG = require("../../../assets/images/ipanema.png");
-
 const C = Colors.light;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -39,7 +37,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_W = (SCREEN_WIDTH - 48 - 12) / 2;
 
 function ClassicoCard({ item }: { item: Atividade }) {
-  const imgSrc = item.hero_image_url ? { uri: item.hero_image_url } : FALLBACK_IMG;
+  const imgSrc = item.hero_image_url ? { uri: item.hero_image_url } : undefined;
   return (
     <Pressable
       style={({ pressed }) => [
@@ -91,7 +89,6 @@ function LuckyCard({
     >
       {/* Image */}
       <View style={s.luckyImageWrap}>
-        <Image source={FALLBACK_IMG} style={s.luckyImage} resizeMode="cover" />
         <LinearGradient
           colors={["rgba(0,0,0,0.06)", "rgba(0,0,0,0.55)"]}
           locations={[0.2, 1]}

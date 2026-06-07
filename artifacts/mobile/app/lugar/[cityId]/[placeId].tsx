@@ -24,7 +24,6 @@ import { useLugar } from "@/hooks/useLugar";
 import { useLugarFotos } from "@/hooks/useLugarFotos";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-const FALLBACK_IMG = require("../../../assets/images/ipanema.png");
 
 const GOLD = "#1B4F72";
 
@@ -57,7 +56,6 @@ function HeroCarousel({
   if (fotos.length === 0) {
     return (
       <View style={styles.heroContainer}>
-        <Image source={FALLBACK_IMG} style={styles.heroImage} resizeMode="cover" />
         <LinearGradient
           colors={["rgba(0,0,0,0.35)", "transparent", "rgba(0,0,0,0.65)"]}
           locations={[0, 0.4, 1]}
@@ -248,8 +246,7 @@ export default function LugarDetailScreen() {
     return (
       <View style={styles.root}>
         <Stack.Screen options={{ headerShown: false }} />
-        <Image source={FALLBACK_IMG} style={StyleSheet.absoluteFill} resizeMode="cover" blurRadius={20} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.7)" }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0A0A0A" }]} />
         <Pressable style={[styles.backButton, { top: topInset + 12 }]} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color="#FFFFFF" />
         </Pressable>

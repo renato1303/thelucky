@@ -54,14 +54,13 @@ export default function OQueFazerBairroScreen() {
 
   const destino    = destinos.find((d) => d.id === (cityId ?? "rio")) ?? destinos[0];
   const { atividades, loading: lugaresLoading } = useOQueFazer();
-  const FALLBACK_IMG = require("../../../assets/images/ipanema.png");
   const allLugares = (atividades ?? []).map((item: any) => ({
     id: item.id,
     titulo: item.nome,
     localizacao: item.bairro_nome ?? "",
     descricao: item.meu_olhar ?? "",
     categoria: item.categoria ?? "atividade",
-    image: item.hero_image_url ? { uri: item.hero_image_url } : FALLBACK_IMG,
+    image: item.hero_image_url ? { uri: item.hero_image_url } : undefined,
     preco: null,
   }));
   const filtered   = allLugares.filter((p: any) => p.localizacao === bairroNome);
@@ -258,14 +257,14 @@ export default function OQueFazerBairroScreen() {
                     if (isSaved(place.id)) {
                       unsave(place.id);
                     } else {
-                      save({
-                        id:           place.id,
-                        categoria:    "oQueFazer",
-                        source_table: "lugares",
-                        titulo:       place.titulo,
-                        localizacao:  place.localizacao,
-                        image:        place.image ?? FALLBACK_IMG,
-                      });
+                       save({
+                         id:           place.id,
+                         categoria:    "oQueFazer",
+                         source_table: "lugares",
+                         titulo:       place.titulo,
+                         localizacao:  place.localizacao,
+                         image:        place.image,
+                       });
                     }
                   }}
                 >

@@ -33,7 +33,7 @@ import { sanitizePhotoUrl } from "@/utils/getImageForEntity";
 import { destinos } from "@/data/mockData";
 import { useNeighborhoods } from "@/hooks/useNeighborhoods";
 import { useLuckyList } from "@/hooks/useLuckyList";
-import { getNeighborhoodHero } from "@/utils/neighborhoodHero";
+import { buildMediaUrl } from "@/lib/mediaUrl";
 import { useGuia } from "@/context/GuiaContext";
 
 const C    = Colors.light;
@@ -60,14 +60,13 @@ export default function LuckyListBairroScreen() {
 
   const destino    = destinos.find((d) => d.id === (cityId ?? "rio")) ?? destinos[0];
   const { luckyList, loading: lugaresLoading } = useLuckyList();
-  const FALLBACK_IMG = require("../../../assets/images/ipanema.png");
   const allLugares = (luckyList?.itens ?? []).map((item: any) => ({
     id: item.lugar.id,
     titulo: item.lugar.nome,
     localizacao: item.lugar.bairro_nome ?? "",
     descricao: item.lugar.meu_olhar ?? "",
     categoria: "lucky",
-    image: FALLBACK_IMG,
+    image: undefined,
   }));
   const filtered   = allLugares.filter((p: any) => p.localizacao === bairroNome);
 
@@ -78,7 +77,7 @@ export default function LuckyListBairroScreen() {
     (n) => n.neighborhood_name === bairroNome,
   ) ?? null;
 
-  const heroImage = getNeighborhoodHero(supabaseNeighborhood?.image_url);
+  const heroImage = supabaseNeighborhood?.image_url ? { uri: buildMediaUrl(supabaseNeighborhood.image_url) } : null;
 
   const [editorialOpen, setEditorialOpen] = useState(false);
 
