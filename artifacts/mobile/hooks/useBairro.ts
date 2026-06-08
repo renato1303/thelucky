@@ -58,15 +58,13 @@ export function useBairro(slug: string | null): State {
           hero_image_url,
           identidade,
           descricao_curta,
-          meu_olhar,
           melhor_para,
           caminhavel,
           vida_noturna,
           gastronomia,
-          seguranca,
+          seguranca_mulher_sozinha,
           lat,
           lng,
-          google_maps_url,
           destinos (
             nome
           )
@@ -92,15 +90,15 @@ export function useBairro(slug: string | null): State {
           hero_image_url: data.hero_image_url,
           identidade: data.identidade,
           descricao_curta: data.descricao_curta,
-          meu_olhar: (data as any).meu_olhar ?? null,
+          meu_olhar: null,
           melhor_para: data.melhor_para ?? [],
           caminhavel: data.caminhavel,
           vida_noturna: data.vida_noturna,
           gastronomia: data.gastronomia,
-          seguranca: (data as any).seguranca ?? null,
+          seguranca: data.seguranca_mulher_sozinha ?? null,
           lat: data.lat,
           lng: data.lng,
-          google_maps_url: (data as any).google_maps_url ?? null,
+          google_maps_url: null,
           destino_nome: (data as any).destinos?.nome ?? "Rio de Janeiro",
         });
       }
