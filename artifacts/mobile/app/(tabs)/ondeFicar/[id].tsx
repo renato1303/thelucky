@@ -166,6 +166,7 @@ export default function OndeFicarScreen() {
   // Navigate to bairro detail
   function handleViewHotels() {
     if (!selectedBairro) return;
+    console.log("DEBUG: selectedBairro.slug =", selectedBairro.slug);
     router.push(`/ondeFicar/bairro/${selectedBairro.slug}`);
   }
 

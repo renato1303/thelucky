@@ -47,6 +47,7 @@ export function useBairro(slug: string | null): State {
     async function fetch() {
       setLoading(true);
       setError(null);
+      console.log("DEBUG: useBairro slug =", slug);
 
       const { data, error: err } = await supabase
         .from("bairros")
@@ -72,6 +73,8 @@ export function useBairro(slug: string | null): State {
         `)
         .eq("slug", slug)
         .single();
+
+      console.log("DEBUG: Supabase response: data =", data, "error =", err, "error.message =", err?.message, "error.details =", err?.details, "error.code =", err?.code);
 
       if (cancelled) return;
 

@@ -64,6 +64,7 @@ function ratingText(rating: number): string {
 
 export default function BairroDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  console.log("DEBUG: useLocalSearchParams slug =", slug);
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 0 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -91,6 +92,7 @@ export default function BairroDetailScreen() {
 
   // Error state
   if (errorBairro || !bairro) {
+    console.log("DEBUG: errorBairro =", errorBairro, "bairro =", bairro, "loadingBairro =", loadingBairro);
     return (
       <View style={s.root}>
         <Stack.Screen options={{ headerShown: false }} />
