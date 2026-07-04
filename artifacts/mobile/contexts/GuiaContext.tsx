@@ -62,8 +62,10 @@ const GuiaContext = createContext<GuiaContextValue>({
 
 export function GuiaProvider({ children }: { children: ReactNode }) {
   const [destinoSelecionado, setDestino] = useState<Destino | null>(null);
+  console.log("GUIDE CONTEXT RENDER", destinoSelecionado);
 
   const selecionarDestino = useCallback((d: Destino) => {
+    console.log("SELECIONAR DESTINO", d);
     setDestino(d);
   }, []);
 

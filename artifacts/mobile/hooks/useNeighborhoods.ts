@@ -19,20 +19,37 @@ export function useNeighborhoods(): State {
       setLoading(true);
       setError(null);
 
-      const { data, error: err } = await supabase
-        .from("v_stay_neighborhoods_with_hotels")
-        .select("*")
-        .eq("active", true)
-        .order("display_order");
+      try {
+        // Fetch neighborhoods
+        const { data: neighborhoodsData, error: neighborhoodsError } = await supabase
+          .from("stay_neighborhoods")
+          .select("*");
 
-      if (cancelled) return;
+        if (cancelled) return;
+        if (neighborhoodsError) throw neighborhoodsError;
 
-      if (err) {
+        // Fetch all hotels
+        const { data: hotelsData, error: hotelsError } = await supabase
+          .from("stay_hotels")
+          .select("*");
+
+        if (cancelled) return;
+        if (hotelsError) throw hotelsError;
+
+        // Combine: for each neighborhood, attach hotels with matching neighborhood_slug
+        const combined = (neighborhoodsData || []).map((neighborhood) => ({
+          ...neighborhood,
+          hotels: (hotelsData || []).filter(
+            (hotel) => hotel.neighborhood_slug === neighborhood.neighborhood_slug
+          ),
+        }));
+
+        setNeighborhoods(combined as Neighborhood[]);
+      } catch (err: any) {
         setError(err.message);
-      } else {
-        setNeighborhoods((data as Neighborhood[]) ?? []);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     fetch();

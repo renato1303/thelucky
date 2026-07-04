@@ -38,6 +38,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import Colors from "@/constants/colors";
 import { useGuia, sourceTableFromCategoria } from "@/context/GuiaContext";
+import { useGuia as useDestinoGuia } from "@/contexts/GuiaContext";
 import type { SavedCategory, SavedItem, SourceTable } from "@/context/GuiaContext";
 import { supabase } from "@/lib/supabase";
 import { getNeighborhoodImage } from "@/data/neighborhoodImages";
@@ -3482,10 +3483,32 @@ export default function RoteiroScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
   const rioHero   = useRioHeroMedia("image");
 
-  const params      = useLocalSearchParams<{ contextual?: string }>();
+  const params      = useLocalSearchParams<{
+    contextual?: string;
+    destinationName?: string;
+    destinationSlug?: string;
+  }>();
   const isContextual = params.contextual === "1";
 
   const { saved, user } = useGuia();
+
+  // Lê o destino diretamente dos parâmetros da URL
+  const destinationName = params.destinationName;
+  const destinationSlug = params.destinationSlug;
+
+  console.log("ROTEIRO PARAMS", { destinationName, destinationSlug, contextual: params.contextual });
+
+  if (!destinationName || !destinationSlug) {
+    console.error("DESTINO NÃO INFORMADO NA URL");
+    Alert.alert("Selecione um destino", "Você precisa escolher um destino antes de gerar o roteiro.");
+    router.back();
+    return null;
+  }
+
+  console.log("DESTINO USADO PARA GERAÇÃO", { destinationName, destinationSlug });
+
+  console.log("DESTINATION NAME", destinationName);
+  console.log("DESTINATION SLUG", destinationSlug);
 
   const [result,            setResult]            = useState<ItineraryResult | null>(null);
   const [generating,        setGenerating]        = useState(false);
@@ -3638,8 +3661,8 @@ export default function RoteiroScreen() {
         const { data: itinerary, error: itinErr } = await supabase
           .from("user_itineraries")
           .insert({
-            destination_id:   "rio-de-janeiro",
-            destination_name: result.destination ?? "Rio de Janeiro",
+             destination_slug:   destinationSlug,
+             destination_name: result.destination ?? destinationName,
             status:           "generated",
             is_public:        true,
             share_slug:       shareSlug,
@@ -3780,8 +3803,8 @@ export default function RoteiroScreen() {
         const { data: itinerary, error: itinErr } = await supabase
           .from("user_itineraries")
           .insert({
-            destination_id:   "rio-de-janeiro",
-            destination_name: result.destination ?? "Rio de Janeiro",
+             destination_slug:   destinationSlug,
+             destination_name: result.destination ?? destinationName,
             status:           "generated",
             is_public:        true,
             share_slug:       slug,
@@ -3870,21 +3893,16 @@ export default function RoteiroScreen() {
   /** Fetches a hotel recommendation from Supabase when the user has none saved. */
   async function fetchSuggestedHotel(budget: BudgetStyle) {
     try {
-      const { data } = await supabase
-        .from("v_stay_neighborhoods_with_hotels")
-        .select("neighborhood_name, neighborhood_slug, hotels")
-        .eq("active", true)
-        .order("display_order", { ascending: true })
-        .limit(8);
+      // Fetch a sample of hotels directly
+      const { data: hotelsData, error: hotelsError } = await supabase
+        .from("stay_hotels")
+        .select("id, hotel_name, hotel_category, photo_url, neighborhood_slug")
+        .limit(20);
 
-      if (!data || data.length === 0) return;
+      if (hotelsError) throw hotelsError;
+      if (!hotelsData || hotelsData.length === 0) return;
 
-      type HotelRow = { id: string; hotel_name: string; hotel_category: string; photo_url: string | null; neighborhood_slug: string | null; display_order: number };
-      const allHotels: (HotelRow & { neighborhood_name: string })[] = (data as any[]).flatMap((n) =>
-        ((n.hotels ?? []) as HotelRow[]).map((h) => ({ ...h, neighborhood_name: n.neighborhood_name as string }))
-      );
-
-      if (allHotels.length === 0) return;
+      const allHotels = hotelsData;
 
       // Budget-matching heuristic using hotel_category keywords
       const luxuryKeywords  = ["luxo", "luxury", "resort", "grand", "palace"];
@@ -3896,13 +3914,13 @@ export default function RoteiroScreen() {
       } else if (budget === "essencial") {
         selected = allHotels.find((h) => budgetKeywords.some((k) => h.hotel_category?.toLowerCase().includes(k)));
       }
-      // conforto (or no match): use first curated hotel by display_order
+      // conforto (or no match): use first hotel
       if (!selected) selected = allHotels[0];
 
       setSuggestedHotel({
         id:           selected.id,
         titulo:       selected.hotel_name,
-        localizacao:  selected.neighborhood_name,
+        localizacao:  selected.neighborhood_slug || "Rio de Janeiro",
         image:        selected.photo_url ? { uri: selected.photo_url } : require("@/assets/images/rio-aerial-clean.png"),
         categoria:    "hotel",
         source_table: "stay_hotels",
@@ -3927,14 +3945,21 @@ export default function RoteiroScreen() {
         localizacao: s.localizacao,
       }));
 
+      const payload = {
+        savedItems:   serializableItems,
+        destination:  destinationName,
+        destinoSlug,
+        preferences:  { inspirations, vibe, travelVibe, budget },
+        requestedDays: nights,
+      };
+      console.log("PAYLOAD ENVIADO", payload);
+
       const { data, error } = await supabase.functions.invoke("generate-itinerary", {
-        body: {
-          savedItems:   serializableItems,
-          destination:  "Rio de Janeiro",
-          preferences:  { inspirations, vibe, travelVibe, budget },
-          requestedDays: nights,
-        },
+        body: payload,
       });
+
+      console.log("EDGE RESPONSE DATA", data);
+      console.log("EDGE RESPONSE ERROR", error);
 
       if (error || !data?.days) throw new Error(error?.message ?? "empty response");
 
@@ -4002,8 +4027,8 @@ export default function RoteiroScreen() {
             .from("user_itineraries")
             .insert({
               user_id:          user.id,
-              destination_id:   "rio-de-janeiro",
-              destination_name: data.destination ?? "Rio de Janeiro",
+              destination_slug:   destinationSlug,
+              destination_name: data.destination ?? destinationName,
               status:           "generated",
               is_public:        false,
               days_count:       data.summary?.totalDays ?? hydratedDays.length,
@@ -4052,7 +4077,7 @@ export default function RoteiroScreen() {
       if (autoSavedId) setSavedItineraryId(autoSavedId);
     } catch (_) {
       const prefs: ItineraryPreferences = { inspirations, vibe };
-      setResult(buildItinerary(saved, prefs));
+      setResult(buildItinerary(saved, prefs, destinationName));
     } finally {
       setGenerating(false);
     }

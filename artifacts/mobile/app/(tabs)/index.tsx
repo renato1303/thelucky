@@ -330,7 +330,7 @@ function HeroDestaque({
 }
 
 function InputBar() {
-  const { save } = useGuia();
+  const { save, destinoSelecionado } = useGuia();
   const [linkValue, setLinkValue] = useState("");
   const [captionValue, setCaptionValue] = useState("");
   const [state, setState] = useState<VideoLinkState>({ status: "idle" });
@@ -389,7 +389,7 @@ function InputBar() {
       const body: Record<string, any> = {
         platform,
         url,
-        destinoSlug: "rio-de-janeiro",
+        destinoSlug: destinoSelecionado?.slug,
         userId: session?.user?.id ?? null, // null if not logged in
       };
 

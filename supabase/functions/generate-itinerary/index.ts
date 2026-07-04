@@ -316,6 +316,11 @@ async function enrichPlaces(
     .filter((s) => s.categoria === "restaurante")
     .map((s) => Number(s.id));
 
+  console.log("INPUT SAVED ITEMS", JSON.stringify(saved, null, 2));
+  console.log("OQ IDS", oqIds);
+  console.log("LUCKY IDS", luckyIds);
+  console.log("REST IDS", restIds);
+
   // Parallel fetch from all three sources
   const [oqResult, luckyResult, restResult] = await Promise.all([
     oqIds.length > 0
@@ -351,6 +356,21 @@ async function enrichPlaces(
           .in("id", restIds)
       : Promise.resolve({ data: [] }),
   ]);
+
+  console.log("OQ FOUND", oqResult.data?.length ?? 0);
+  console.log("LUCKY FOUND", luckyResult.data?.length ?? 0);
+  console.log("REST FOUND", restResult.data?.length ?? 0);
+  console.log("OQ DATA", JSON.stringify(oqResult.data?.[0] || null));
+  console.log("LUCKY DATA", JSON.stringify(luckyResult.data?.[0] || null));
+  console.log("REST DATA", JSON.stringify(restResult.data?.[0] || null));
+  console.log("OQ DATA", JSON.stringify(oqResult.data?.[0] || null));
+  console.log("LUCKY DATA", JSON.stringify(luckyResult.data?.[0] || null));
+  console.log("REST DATA", JSON.stringify(restResult.data?.[0] || null));
+  console.log("QUERY RESULT", {
+    oqFound: oqResult.data?.length,
+    luckyFound: luckyResult.data?.length,
+    restFound: restResult.data?.length,
+  });
 
   const oqMap = new Map(
     (oqResult.data ?? []).map((r: Record<string, unknown>) => [
@@ -486,6 +506,16 @@ async function enrichPlaces(
       meu_olhar,
     });
   }
+
+  console.log("FINAL PLACES COUNT", places.length);
+  console.log(
+    "FINAL PLACES",
+    places.map(p => ({
+      id: p.id,
+      name: p.name,
+      categoria: p.categoria
+    }))
+  );
 
   return places;
 }
@@ -797,6 +827,7 @@ async function fetchComplementaryContent(
 async function attachNeighborhoodMeta(
   places: EnrichedPlace[],
   supa: ReturnType<typeof createClient>,
+  destinoId: string,
 ): Promise<EnrichedPlace[]> {
   const bairros = [...new Set(places.map((p) => p.area).filter(Boolean))];
   if (bairros.length === 0) return places;
@@ -806,7 +837,7 @@ async function attachNeighborhoodMeta(
     .select(
       "nome,caminhavel,melhor_para,seguranca_mulher_sozinha",
     )
-    .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+    .eq("destino_id", destinoId)
     .in("nome", bairros);
 
   const nbMap = new Map(
@@ -3302,6 +3333,7 @@ async function selectAutoHotel(
   preferences: Preferences,
   itineraryPlaces: EnrichedPlace[],
   supa: ReturnType<typeof createClient>,
+  destinoId: string,
 ): Promise<{
   id: string;
   nome: string;
@@ -3311,7 +3343,7 @@ async function selectAutoHotel(
   const { data: hotels } = await supa
     .from("hoteis")
     .select("id,nome,bairro_nome,descricao,preco_nivel,photo_url")
-    .eq("destino_id", "7f047742-427f-4b11-8286-781af899c57d")
+    .eq("destino_id", destinoId)
     .limit(60);
 
   if (!hotels || hotels.length === 0) {
@@ -3332,14 +3364,6 @@ async function selectAutoHotel(
   }
 
   // Budget signals for matching
-  const budgetSignals = budget ? (BUDGET_HOTEL_SIGNALS[budget] ?? []) : [];
-  const antiBudgetSignals =
-    budget === "sofisticado"
-      ? BUDGET_HOTEL_SIGNALS.essencial
-      : budget === "essencial"
-        ? BUDGET_HOTEL_SIGNALS.sofisticado
-        : [];
-
   const scored = (hotels as Record<string, unknown>[]).map((h) => {
     const bairro = ((h.bairro_nome as string) ?? "").toLowerCase();
     const precoNivel = (h.preco_nivel as number) ?? 3;
@@ -3356,17 +3380,6 @@ async function selectAutoHotel(
     // Preference neighborhood match
     if ([...preferredNeighborhoods].some((nb) => bairro.includes(nb)))
       score += 4;
-
-    // Zone proximity to itinerary cluster
-    if (itinerarZones.has(zone)) score += 3;
-    else {
-      for (const iz of itinerarZones) {
-        if (Math.abs(zone - iz) === 1) {
-          score += 1;
-          break;
-        }
-      }
-    }
 
     // Zone proximity to itinerary cluster
     if (itinerarZones.has(zone)) score += 3;
@@ -3409,13 +3422,16 @@ serve(async (req) => {
     const body: RequestBody = await req.json();
     const {
       savedItems = [],
-      destination = "Rio de Janeiro",
+      destination,
       preferences = { inspirations: [], vibe: "moderado" },
       requestedDays,
       arrivalDate,
       departureDate,
-      destinoSlug = "rio-de-janeiro",
+      destinoSlug,
     } = body;
+
+    const dest = destination ?? "Rio de Janeiro";
+    const slug = destinoSlug ?? dest.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-");
 
     const DESTINO_IDS: Record<string, string> = {
       "rio-de-janeiro": "7f047742-427f-4b11-8286-781af899c57d",
@@ -3423,7 +3439,12 @@ serve(async (req) => {
       "nova-york":      "24c45a84-70a9-43b6-b1fa-0063457d9644",
       "ibiza":          "79f6d0cd-b490-4037-92a8-4bf371b8511e",
     };
-    const DESTINO_ID = DESTINO_IDS[destinoSlug] ?? DESTINO_IDS["rio-de-janeiro"];
+    const DESTINO_ID = DESTINO_IDS[slug] ?? DESTINO_IDS["rio-de-janeiro"];
+
+    console.log("DESTINATION", destination);
+    console.log("DESTINO SLUG", destinoSlug);
+    console.log("RESOLVED SLUG", slug);
+    console.log("DESTINO ID", DESTINO_ID);
 
     // ── Step D: determine hotel zone anchor ───────────────────────────────────
     // Source: raw savedItems where categoria === "hotel" (enrichPlaces skips hotels).
@@ -3516,6 +3537,7 @@ serve(async (req) => {
 
     // ── Step 1+2: Normalize saved items from all sources ────────────────────────
     let savedPlaces = await enrichPlaces(savedItems, supa);
+    console.log("AFTER ENRICH", savedPlaces.length);
 
     // ── Trip length is locked early — determines how much complement we need ──
     const tripLength = computeTripLength(
@@ -3561,9 +3583,10 @@ serve(async (req) => {
       _seenMerge.add(key);
       return true;
     });
+    console.log("AFTER COMPLEMENTARY", places.length);
 
     // Attach neighborhood metadata to the full pool (saved + complementary)
-    places = await attachNeighborhoodMeta(places, supa);
+    places = await attachNeighborhoodMeta(places, supa, DESTINO_ID);
 
     // ── Step 3: Classify each place by best time-of-day ───────────────────────
     places = classifyAllPeriodos(places, vibe);
@@ -3618,6 +3641,7 @@ serve(async (req) => {
       vibe,
       hotelZone,
     );
+    console.log("DAY GROUPS", dayGroups.length);
 
     // ── Step 5: Build fully populated DiaRoteiro[] with morning load balancing
     let days = buildFullDraft(
@@ -3626,12 +3650,14 @@ serve(async (req) => {
       vibe,
       preferences.inspirations ?? [],
     );
+    console.log("DRAFT DAYS", days.length);
 
     // ── Step 6: Gemini refinement — only reorders within existing períodos ─────
     days = await refineWithGemini(days, dest, preferences, places);
 
     // ── Step 7: Validation — recover any dropped places ───────────────────────
     days = validateAndFix(days, places);
+    console.log("VALIDATED DAYS", days.length);
 
     // ── Step 7b: Hotel injection ───────────────────────────────────────────────
     // RULE: EVERY itinerary MUST include a hotel block on every day.
@@ -3672,7 +3698,7 @@ serve(async (req) => {
       // Scenario B: no saved hotel OR saved hotel ID not found in DB
       // Auto-select based on budget + preferences + zone proximity
       console.log("[Step 7b] No saved hotel — running auto-hotel selection");
-      resolvedHotelRow = await selectAutoHotel(preferences, places, supa);
+      resolvedHotelRow = await selectAutoHotel(preferences, places, supa, DESTINO_ID);
     }
 
     if (resolvedHotelRow) {
@@ -3885,14 +3911,23 @@ serve(async (req) => {
       days,
     };
 
+    console.log("FINAL RESULT", {
+      days: result.days?.length,
+      hotel: !!result.days?.[0]?.hotel,
+      destination: result.destination
+    });
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return new Response(
+      JSON.stringify({
+        error: (err as Error).message,
+        stack: (err as Error).stack,
+      }),
+      { status: 400 }
+    );
   }
 });

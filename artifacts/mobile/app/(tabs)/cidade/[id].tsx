@@ -19,6 +19,8 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useDestinoFotos } from "@/hooks/useDestinoFotos";
 import { useDestaquesDestino, type DestaqueDestino } from "@/hooks/useDestaquesDestino";
+import { useGuia } from "@/context/GuiaContext";
+import { useDestinoGuia } from "@/contexts/GuiaContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const PETROL_BLUE = "#1B4F72";
@@ -100,6 +102,8 @@ export default function CidadeScreen() {
   const insets = useSafeAreaInsets();
   const top = Platform.OS === "web" ? 20 : insets.top;
   const bottom = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const { selecionarDestino } = useGuia();
 
   // Buscar destino do Supabase pelo slug
   const [destino, setDestino] = useState<DestinoData | null>(null);

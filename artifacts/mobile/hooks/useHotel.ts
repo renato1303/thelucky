@@ -12,46 +12,39 @@ type State = {
 };
 
 export function useHotel(hotelId: string): State {
-  const [hotel, setHotel]     = useState<HotelWithNeighborhood | null>(null);
+  const [hotel, setHotel] = useState<HotelWithNeighborhood | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hotelId) return;
+    if (!hotelId) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
 
     async function fetch() {
       setLoading(true);
       setError(null);
 
-      const { data, error: err } = await supabase
-        .from("v_stay_neighborhoods_with_hotels")
-        .select("*")
-        .eq("active", true);
+      try {
+        // Fetch hotel
+        const { data: hotelData, error: hotelError } = await supabase
+          .from("stay_hotels")
+          .select("*")
+          .eq("id", hotelId)
+          .single();
 
-      if (cancelled) return;
+        if (cancelled) return;
+        if (hotelError) throw hotelError;
 
-      if (err) {
+        // Neighborhood data is not available in stay_neighborhoods, so we skip it
+        setHotel({ ...hotelData, neighborhood: undefined as any });
+      } catch (err: any) {
         setError(err.message);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // Search all neighborhoods for the hotel
-      const neighborhoods = (data as Neighborhood[]) ?? [];
-      let found: HotelWithNeighborhood | null = null;
-
-      for (const n of neighborhoods) {
-        const h = (n.hotels ?? []).find((h) => h.id === hotelId);
-        if (h) {
-          const { hotels: _hotels, ...neighborhoodWithoutHotels } = n;
-          found = { ...h, neighborhood: neighborhoodWithoutHotels };
-          break;
-        }
-      }
-
-      setHotel(found);
-      setLoading(false);
     }
 
     fetch();

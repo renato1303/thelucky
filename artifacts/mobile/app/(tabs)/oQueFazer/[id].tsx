@@ -25,6 +25,7 @@ import Colors from "@/constants/colors";
 import { destinos } from "@/data/mockData";
 import DestinationMapView from "@/components/DestinationMapView";
 import { useGuia } from "@/context/GuiaContext";
+import { DESTINATION_CONFIG, DESTINO_IDS } from "@/contexts/GuiaContext";
 import { useOQueFazer } from "@/hooks/useOQueFazer";
 import { useBairros } from "@/hooks/useBairros";
 import { getImageForEntity } from "@/utils/getImageForEntity";
@@ -59,23 +60,62 @@ const CATEGORIA_LABELS: Record<string, string> = {
 const RIO_DESTINO_ID = "7f047742-427f-4b11-8286-781af899c57d";
 
 export default function OQueFazerScreen() {
-  const { id, categoria } = useLocalSearchParams<{ id: string; categoria?: string }>();
-  const insets    = useSafeAreaInsets();
-  const topInset  = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+  console.log("OQueFazerScreen iniciou");
+  const params = useLocalSearchParams<{ id: string; categoria?: string }>();
+    console.log("PASSOU PARAMS", params);
+    const id = params.id || "miami";
+    const categoria = params.categoria;
+    console.log("PARAM ID", id);
+    console.log("DESTINATION_CONFIG", DESTINATION_CONFIG);
 
-  const destino    = destinos.find((d) => d.id === id) ?? destinos[0];
-  const { atividades, loading, error } = useOQueFazer(id);
-  const { bairros, loading: bairrosLoading } = useBairros(id);
-  const descricao  = DESCRICOES[destino.id] ?? DEFAULT_DESCRICAO;
-  const { save, unsave, isSaved } = useGuia();
+    const insets    = useSafeAreaInsets();
+    const topInset  = Platform.OS === "web" ? 67 : insets.top;
+    const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  // Filter by categoria if provided (case-insensitive)
-  const filtered = categoria
-    ? atividades.filter((l) => l.categoria?.toLowerCase() === categoria.toLowerCase())
-    : atividades;
+    const destino    = destinos.find((d) => d.id === id) || destinos[0];
+    console.log("PASSOU DESTINO", destino);
 
-  const categoriaLabel = categoria ? (CATEGORIA_LABELS[categoria.toLowerCase()] ?? categoria) : null;
+    const destinoId = DESTINO_IDS[id] || DESTINO_IDS["rio-de-janeiro"];
+    const { atividades, loading, error } = useOQueFazer(destinoId);
+    const lista = atividades || [];
+    console.log("PASSOU useOQueFazer", { atividades, loading, error });
+    console.log("ATIVIDADES RECEBIDAS");
+    console.table(atividades);
+    console.log(
+      "INDEX UNDEFINED",
+      atividades?.findIndex((x) => x === undefined)
+    );
+
+    const destConfig = DESTINATION_CONFIG[id];
+    console.log("PASSOU DEST_CONFIG", destConfig);
+
+    const { bairros, loading: bairrosLoading } = useBairros(destConfig?.uuid ?? "");
+    console.log("PASSOU useBairros", { bairros, bairrosLoading });
+
+    const descricao  = DESCRICOES[destino.id] ?? DEFAULT_DESCRICAO;
+    console.log("PASSOU descricao", descricao);
+
+    const { save, unsave, isSaved } = useGuia();
+    console.log("PASSOU useGuia");
+
+    // Filter by categoria if provided (case-insensitive)
+    const filtered = categoria
+      ? lista.filter((l) => l.categoria?.toLowerCase() === categoria.toLowerCase())
+      : lista;
+    console.log("PASSOU filtered", filtered);
+    console.log("FILTERED");
+    console.table(filtered);
+    console.log(
+      "FILTERED INDEX",
+      filtered.findIndex((x) => x === undefined)
+    );
+    filtered.forEach((item, i) => {
+      if (item === undefined) {
+        console.error("ITEM UNDEFINED", i);
+      }
+    });
+
+    const categoriaLabel = categoria ? (CATEGORIA_LABELS[categoria.toLowerCase()] ?? categoria) : null;
 
   const listRef = useRef<ScrollView>(null);
 
@@ -179,7 +219,9 @@ export default function OQueFazerScreen() {
             <Text key={i} style={s.descPara}>{para}</Text>
           ))}
 
-          {filtered.map((place, index) => {
+          {console.log("FILTERED ARRAY", filtered) ||
+            filtered.forEach((item, index) => console.log(index, item)) ||
+            filtered.map((place, index) => {
             const imageSource = getImageForEntity("activity", place.nome, place.bairro_nome ?? "", place.hero_image_url);
             return (
               <Pressable

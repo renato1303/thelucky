@@ -19,6 +19,7 @@ import {
   Animated,
   Dimensions,
   ImageSourcePropType,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -351,10 +352,12 @@ function ActionArea({
   hasSaved,
   onInstagram,
   onTikTok,
+  onAIClick,
 }: {
   hasSaved: boolean;
   onInstagram: () => void;
   onTikTok:    () => void;
+  onAIClick:   () => void;
 }) {
   return (
     <View style={act.wrap}>
@@ -370,11 +373,7 @@ function ActionArea({
           act.aiBtn,
           pressed && { opacity: 0.82, transform: [{ scale: 0.985 }] },
         ]}
-        onPress={() =>
-          hasSaved
-            ? router.push({ pathname: "/roteiro", params: { contextual: "1" } })
-            : router.push("/roteiro")
-        }
+        onPress={onAIClick}
       >
         <View style={act.aiLeft}>
           <View style={act.aiIconWrap}>
@@ -865,11 +864,20 @@ const rot = StyleSheet.create({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main screen
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Main screen
+  // ─────────────────────────────────────────────────────────────────────────────
 
-export default function MinhaViagemScreen() {
+  // DESTINOS DISPONÍVEIS PARA O MODAL
+  const DESTINOS = [
+    { slug: "rio-de-janeiro", nome: "Rio de Janeiro" },
+    { slug: "miami", nome: "Miami" },
+    { slug: "nova-york", nome: "Nova York" },
+    { slug: "sao-paulo", nome: "São Paulo" },
+    { slug: "ibiza", nome: "Ibiza" },
+  ];
+
+  export default function MinhaViagemScreen() {
   const insets    = useSafeAreaInsets();
   const topPad    = Platform.OS === "web" ? 67 : insets.top + 12;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -882,6 +890,8 @@ export default function MinhaViagemScreen() {
 
   // URL paste sheet — "instagram" | "tiktok" | null
   const [pasteSource, setPasteSource] = useState<"instagram" | "tiktok" | null>(null);
+  // Modal de seleção de destino
+  const [destinoModalVisible, setDestinoModalVisible] = useState(false);
 
   // Highlight last added item (from video link feature)
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -947,6 +957,7 @@ export default function MinhaViagemScreen() {
           hasSaved={totalSaved > 0}
           onInstagram={() => setPasteSource("instagram")}
           onTikTok={() => setPasteSource("tiktok")}
+          onAIClick={() => setDestinoModalVisible(true)}
         />
 
         {/* ── Saved places or empty hint ── */}
@@ -969,6 +980,50 @@ export default function MinhaViagemScreen() {
           onAdd={(item) => { save(item); }}
         />
       )}
+
+      {/* ── Modal de seleção de destino ── */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={destinoModalVisible}
+        onRequestClose={() => setDestinoModalVisible(false)}
+      >
+        <View style={modalStyles.overlay}>
+          <View style={modalStyles.content}>
+            <Text style={modalStyles.title}>Escolha o destino</Text>
+            <Text style={modalStyles.subtitle}>
+              Para qual cidade você quer seu roteiro?
+            </Text>
+
+            {DESTINOS.map((destino) => (
+              <Pressable
+                key={destino.slug}
+                style={modalStyles.option}
+                onPress={() => {
+                  setDestinoModalVisible(false);
+                  router.push({
+                    pathname: "/roteiro",
+                    params: {
+                      destinationName: destino.nome,
+                      destinationSlug: destino.slug,
+                      contextual: totalSaved > 0 ? "1" : "0",
+                    },
+                  });
+                }}
+              >
+                <Text style={modalStyles.optionText}>{destino.nome}</Text>
+              </Pressable>
+            ))}
+
+            <Pressable
+              style={modalStyles.closeButton}
+              onPress={() => setDestinoModalVisible(false)}
+            >
+              <Text style={modalStyles.closeText}>Cancelar</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1037,5 +1092,65 @@ const s = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(255,255,255,0.08)",
     marginBottom: 22,
+  },
+});
+
+// Estilos do modal de seleção de destino
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
+    backgroundColor: "#1A0E04",
+    borderRadius: 24,
+    padding: 24,
+    width: "80%",
+    maxHeight: "70%",
+    borderWidth: 1,
+    borderColor: `${PETROL}40`,
+  },
+  title: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 24,
+    color: C.cream,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  option: {
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  optionText: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 16,
+    color: C.cream,
+    textAlign: "center",
+  },
+  closeButton: {
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+  },
+  closeText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.5)",
   },
 });

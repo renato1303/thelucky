@@ -50,6 +50,8 @@ export function useOQueFazer(destinoSlug: string = "rio-de-janeiro"): State {
       setLoading(true);
       setError(null);
 
+      console.log("DESTINO ID (useOQueFazer)", destinoId);
+
       const { data, error: err } = await supabase
         .from("lugares")
         .select(`
@@ -84,6 +86,16 @@ export function useOQueFazer(destinoSlug: string = "rio-de-janeiro"): State {
 
       if (cancelled) return;
 
+      console.log("ATIVIDADES ENCONTRADAS", data?.length);
+      console.log("ERRO ATIVIDADES", err);
+
+      console.log("RAW DATA");
+      console.table(data);
+      console.log(
+        "RAW UNDEFINED",
+        data?.findIndex((x: any) => x === undefined)
+      );
+
       if (err) {
         setError(err.message);
         setLoading(false);
@@ -111,6 +123,16 @@ export function useOQueFazer(destinoSlug: string = "rio-de-janeiro"): State {
         bairro_nome: row.bairros?.nome ?? null,
         ordem_bairro: row.ordem_bairro,
       }));
+
+      console.log("MAPPED");
+      console.table(mapped);
+      console.log(
+        "MAPPED UNDEFINED",
+        mapped.findIndex((x) => x === undefined)
+      );
+
+      console.log("ANTES SET");
+      console.table(mapped);
 
       setAtividades(mapped);
       setLoading(false);

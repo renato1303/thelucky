@@ -138,7 +138,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider style={{ backgroundColor: ROOT_BG }}>
       <ErrorBoundary>
-        <GuiaProvider>
+<GuiaProvider>
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1, backgroundColor: ROOT_BG }}>
               <RootLayoutNav />

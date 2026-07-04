@@ -71,10 +71,6 @@ const VIBE_MAX_ITEMS: Record<Vibe, number> = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function inferDestination(_saved: SavedItem[]): string {
-  return "Rio de Janeiro";
-}
-
 function itemScore(categoria: SavedCategory, inspirations: Inspiration[]): number {
   if (inspirations.length === 0) return 0;
   return inspirations.reduce((sum, ins) => {
@@ -88,6 +84,7 @@ function itemScore(categoria: SavedCategory, inspirations: Inspiration[]): numbe
 export function buildItinerary(
   saved: SavedItem[],
   preferences: ItineraryPreferences,
+  destination: string,
 ): ItineraryResult {
   const { inspirations, vibe } = preferences;
 
@@ -131,7 +128,7 @@ export function buildItinerary(
   const totalItems = saved.filter((s) => s.categoria !== "hotel").length;
 
   return {
-    destination: inferDestination(saved),
+    destination,
     source: "trip_saved_places",
     preferences,
     summary: {
